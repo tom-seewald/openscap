@@ -51,6 +51,10 @@
 #include <sys/types.h>
 #include <dirent.h>
 
+#if defined(OS_FREEBSD)
+#include <sys/syslimits.h>
+#endif
+
 #include <probe/probe.h>
 #include "_seap.h"
 #include "probe-api.h"
