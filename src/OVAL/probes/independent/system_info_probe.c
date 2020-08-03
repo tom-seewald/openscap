@@ -85,6 +85,13 @@
 #include "system_info_probe.h"
 #include "oscap_helpers.h"
 
+#define _REGEX_RES_VECSIZE     12
+#define MAX_BUFFER_SIZE        4096
+
+#if !defined(HOST_NAME_MAX)
+#define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
+#endif
+
 #if defined(OS_LINUX)
 #include <sys/socket.h>
 #include <ifaddrs.h>
@@ -94,10 +101,7 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
-
 #include <pcre.h>
-#define _REGEX_RES_VECSIZE     12
-#define MAX_BUFFER_SIZE        4096
 
 static char *get_mac(const struct ifaddrs *ifa, int fd)
 {
