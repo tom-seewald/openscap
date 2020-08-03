@@ -32,6 +32,7 @@
 
 #include <probe-api.h>
 #include "probe/entcmp.h"
+#include "sysctl_probe.h"
 
 #if defined(OS_LINUX)
 
@@ -42,7 +43,6 @@
 #include <limits.h>
 #include "oval_fts.h"
 #include "common/debug_priv.h"
-#include "sysctl_probe.h"
 
 #define PROC_SYS_DIR "/proc/sys"
 #define PROC_SYS_MAXDEPTH 7
