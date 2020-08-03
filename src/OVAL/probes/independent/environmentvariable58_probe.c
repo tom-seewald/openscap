@@ -52,7 +52,7 @@
 #include <dirent.h>
 
 #if defined(OS_FREEBSD)
-#include <sys/syslimits.h>
+#include <limits.h>
 #endif
 
 #include <probe/probe.h>
