@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -e -o pipefail
 set -x
@@ -86,7 +86,7 @@ echo "stderr file: $stderr"
 	"${PROC}" param1 param2 param3 &
 	PID=$!
 	[ -n "${PID}" ]
-	# "/bin/bash ./stopped_process.sh param1 param2 param3"
+	# "/usr/bin/env bash ./stopped_process.sh param1 param2 param3"
 	CMDLINE_REGEX='/(\w+/)+bash.*stopped_process\.sh param1 param2 param3$'
 
 	# Run zombie process (without full cmdline)
@@ -101,7 +101,7 @@ echo "stderr file: $stderr"
 	"${PROC}" escaped "$(echo -ne "\e\n\E[1;33m") \\\n\e" &
 	ESCAPED_PID=$!
 	[ -n "${ESCAPED_PID}" ]
-	# "/bin/bash ./stopped_process.sh escaped . .[1;33m \\n\e"
+	# "/usr/bin/env bash ./stopped_process.sh escaped . .[1;33m \\n\e"
 	ESCAPED_CMDLINE_REGEX='/(\w+/)+bash.*stopped_process\.sh escaped \. \.\[1;33m \\\\n\\e$'
 
 ########################################################################
