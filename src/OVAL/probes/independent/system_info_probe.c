@@ -97,7 +97,6 @@
 #include <ifaddrs.h>
 #include <netdb.h>
 #include <sys/ioctl.h>
-#include <string.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
@@ -184,9 +183,40 @@ static char *get_mac(const struct ifaddrs *ifa, int fd)
 	}
 	return mac_buf;
 }
+
+#elif defined(OS_FREEBSD)
+#include <arpa/inet.h>
+#include <ifaddrs.h>
+#include <sys/ioctl.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <net/if.h>
+
+static char *get_mac(const struct ifaddrs *ifa, int fd)
+{
+	struct ifreq ifr;
+	unsigned char mac[6];
+	static char mac_buf[20];
+
+	memset(&ifr, 0, sizeof(struct ifreq));
+	strncpy(ifr.ifr_name, ifa->ifa_name, IFNAMSIZ);
+	ifr.ifr_name[IFNAMSIZ-1] = 0;
+
+	if (ioctl(fd, SIOCGHWADDR, &ifr) >= 0) {
+		memcpy(mac, ifr.ifr_addr.sa_data, sizeof(mac));
+		snprintf(mac_buf, sizeof(mac_buf),
+				"%02X:%02X:%02X:%02X:%02X:%02X",
+				mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	}
+	else {
+		mac_buf[0] = 0;
+	}
+
+    return mac_buf;
+}
 #endif
 
-#if defined(OS_LINUX) || (defined(OS_SOLARIS))
+#if defined(OS_LINUX) || defined(OS_SOLARIS) || defined(OS_FREEBSD)
 static int get_ifs(SEXP_t *item)
 {
        struct ifaddrs *ifaddr, *ifa;
@@ -480,8 +510,13 @@ static char *_get_os_release(const char *oscap_probe_root)
 {
 	char os_release_data[MAX_BUFFER_SIZE+1];
 	char *ret = NULL;
+#if defined(OS_FREEBSD)
+	const char *os_release_file = "/var/run/os-release";
+#else
+	const char *os_release_file = "/etc/os-release";
+#endif
 
-	FILE *fp = oscap_fopen_with_prefix(oscap_probe_root, "/etc/os-release");
+	FILE *fp = oscap_fopen_with_prefix(oscap_probe_root, os_release_file);
 	if (fp == NULL)
 		goto fail;
 
