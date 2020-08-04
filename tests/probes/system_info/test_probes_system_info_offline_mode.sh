@@ -15,6 +15,17 @@ set -e -o pipefail
 function test_offline_mode_system_info_offline {
 	temp_dir="$(mktemp -d)"
 
+	case $(uname) in
+		FreeBSD)
+			OS_RELEASE_PATH="/var/run/os-release"
+			HOSTNAME=`grep hostname= /etc/rc.conf | cut -f2 -d\"`
+			;;
+		*)
+			OS_RELEASE_PATH="/etc/os-release"
+			HOSTNAME=`cat /etc/hostname`
+			;;
+	esac
+
 	ln -s /etc $temp_dir
 
 	result="$(mktemp)"
@@ -27,8 +38,7 @@ function test_offline_mode_system_info_offline {
 
 	[ -s "$result" ]
 
-	. /etc/os-release
-	HOSTNAME=`cat /etc/hostname`
+	. $OS_RELEASE_PATH
 
 	assert_exists 1 '/oval_results/results/system/oval_system_characteristics/system_info'
 	assert_exists 1 "/oval_results/results/system/oval_system_characteristics/system_info/os_name[text()=\"${NAME}\"]"

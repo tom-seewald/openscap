@@ -22,9 +22,19 @@ function test_probes_system_info {
 	local ret_val=0;
 	local LOGFILE="test_probes_system_info.log"
 
+	case `uname` in
+		FreeBSD)
+			OS_RELEASE_PATH="/var/run/os-release"
+			;;
+		*)
+			OS_RELEASE_PATH="/etc/os-release"
+			;;
+	esac
+
+
 	bash $builddir/run ./test_probes_system_info > "$LOGFILE"
 
-	. /etc/os-release
+	. $OS_RELEASE_PATH
 
 	if [ $? -eq 0 ] && [ -f $RF ]; then
 		OS_NAME="$NAME"
