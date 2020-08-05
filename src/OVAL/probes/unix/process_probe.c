@@ -520,7 +520,7 @@ static int read_process(SEXP_t *cmd_ent, probe_ctx *ctx)
 	struct kinfo_proc *proclist, *proc;
 	struct result_info r;
 	char buf[LINE_MAX];
-	int i, count;
+	int i, j, count;
 	int err = 1;
 	kvm_t *kd;
 
@@ -542,16 +542,14 @@ static int read_process(SEXP_t *cmd_ent, probe_ctx *ctx)
 			continue;
 
 		SEXP_t *cmd_sexp;
+		char arg_dest[LINE_MAX] = {0};
 		char **argbuf = NULL;
 		argbuf = kvm_getargv(kd, proc, LINE_MAX);
 
-		if (!argbuf) {
-			r.command = "";
-		}
-		else {
-			char arg_dest[LINE_MAX] = {0};
-			int j;
 
+		if (!argbuf)
+			r.command = "";
+		else {
 			for (j = 0; argbuf[j] != NULL; j++) {
 				strncat(arg_dest, argbuf[j], strlen(argbuf[j]));
 				strncat(arg_dest, " ", 1);
@@ -565,29 +563,27 @@ static int read_process(SEXP_t *cmd_ent, probe_ctx *ctx)
 		cmd_sexp = SEXP_string_newf("%s", r.command);
 
 		if (probe_entobj_cmp(cmd_ent, cmd_sexp) == OVAL_RESULT_TRUE) {
-
-			r.pid = proc->ki_pid;
-			r.ppid = proc->ki_ppid;
-			r.priority = proc->ki_pri.pri_level;
-			r.ruid = proc->ki_ruid;
-			r.user_id = proc->ki_uid;
-
 			const char *fmt;
 			char tty_buf[64];
 			char exec_buf[64];
 			char start_buf[64];
 
+			time_t curr_year;
+			time_t curr_day;
+			time_t start_year;
+			time_t start_day;
+			time_t exec_time_diff;
+
 			time_t start_time = proc->ki_start.tv_sec;
 			struct timeval current_time;
 
 			gettimeofday(&current_time, NULL);
-			time_t exec_time = current_time.tv_sec - proc->ki_start.tv_sec;
-			r.exec_time = convert_time(exec_time, exec_buf, sizeof(exec_buf));
+			exec_time_diff = current_time.tv_sec - proc->ki_start.tv_sec;
 
-			time_t curr_year = current_time.tv_sec / SEC_PER_YR;
-			time_t curr_day = current_time.tv_sec / SEC_PER_DAY;
-			time_t start_year = start_time / SEC_PER_YR;
-			time_t start_day = start_time / SEC_PER_DAY;
+			curr_year = current_time.tv_sec / SEC_PER_YR;
+			curr_day = current_time.tv_sec / SEC_PER_DAY;
+			start_year = start_time / SEC_PER_YR;
+			start_day = start_time / SEC_PER_DAY;
 
 			if (curr_year != start_year || curr_day != start_day)
 				fmt = "%b_%d";
@@ -596,8 +592,6 @@ static int read_process(SEXP_t *cmd_ent, probe_ctx *ctx)
 
 			struct tm *loc_time = localtime(&start_time);
 			strftime(start_buf, sizeof(start_buf), fmt, loc_time);
-
-			r.start_time = start_buf;
 
 			switch(proc->ki_tdev) {
 				case NODEV:
@@ -624,6 +618,14 @@ static int read_process(SEXP_t *cmd_ent, probe_ctx *ctx)
 					break;
 			}
 
+			r.exec_time = convert_time(exec_time_diff, exec_buf, sizeof(exec_buf));
+			r.pid = proc->ki_pid;
+			r.ppid = proc->ki_ppid;
+			r.priority = proc->ki_pri.pri_level;
+			r.ruid = proc->ki_ruid;
+			r.user_id = proc->ki_uid;
+			r.start_time = start_buf;
+
 			report_finding(&r, ctx);
 		}
 		SEXP_free(cmd_sexp);
@@ -633,8 +635,8 @@ static int read_process(SEXP_t *cmd_ent, probe_ctx *ctx)
 		return err;
 	
 	}
-	err = 0;
 
+	err = 0;
 	return err;
 }
 
