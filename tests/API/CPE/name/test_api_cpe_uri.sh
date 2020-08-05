@@ -44,9 +44,19 @@ function test_api_cpe_uri_create {
 	./test_api_cpe_uri --parsing  $URI parsing.out > parsing.out.1
 	if [ $? -eq 0 ]; then
 	    if [ "`cat  parsing.out`X" == "${URI}X" ]; then
-		sed 's/^\s*//g' parsing.out.1 > parsing.out.sed-tmp ; mv parsing.out.sed-tmp parsing.out.1
-		sed 's/(null)//g' parsing.out.1 > parsing.out.sed-tmp ; mv parsing.out.sed-tmp parsing.out.1
-		cat parsing.out.1 | xargs -d '\n' ./test_api_cpe_uri --creation > creation.out
+		case `uname` in
+			FreeBSD)
+				sed 's/^[ ]*//g' parsing.out.1 > parsing.out.sed-tmp ; mv parsing.out.sed-tmp parsing.out.1
+				sed 's/||/| |/g' parsing.out.1 > parsing.out.sed-tmp ; mv parsing.out.sed-tmp parsing.out.1
+				cat parsing.out.1 | gxargs -d '\n' ./test_api_cpe_uri --creation > creation.out
+				;;
+			*)
+				sed 's/^\s*//g' parsing.out.1 > parsing.out.sed-tmp ; mv parsing.out.sed-tmp parsing.out.1
+				sed 's/(null)//g' parsing.out.1 > parsing.out.sed-tmp ; mv parsing.out.sed-tmp parsing.out.1
+				cat parsing.out.1 | xargs -d '\n' ./test_api_cpe_uri --creation > creation.out
+				;;
+		esac
+
  		if [ ! $? -eq 0 ] || [ "${URI}X" != "`cat creation.out`X" ]; then
 		    echo "${URI}X != `cat creation.out`X"
 		    ret_val=1; 

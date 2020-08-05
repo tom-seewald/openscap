@@ -39,7 +39,16 @@ function oval_fts {
 set -e -o pipefail
 
 name=$(basename $0 .sh)
-tmpdir=$(mktemp -t -d "${name}.XXXXXX")
+
+case $(uname) in
+	FreeBSD)
+		tmpdir=$(mktemp -d "/tmp/${name}.XXXXXX")
+		;;
+	*)
+		tmpdir=$(mktemp -t -d "${name}.XXXXXX")
+		;;
+esac
+
 ROOT=${tmpdir}/ftsroot
 echo "Temp dir: ${tmpdir}."
 gen_tree $ROOT
