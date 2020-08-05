@@ -12,13 +12,22 @@
 #      David Niemoller
 #      Ondrej Moris, <omoris@redhat.com>
 
+
 . $builddir/tests/test_common.sh
 
 # Test Cases.
 
 function test_crapi_digest {
+    case $(uname) in
+        FreeBSD)
+            local TEMPDIR="$(mktemp -d -q /tmp/tmp.XXXXXX)"
+	    ;;
+        *)
+            local TEMPDIR="$(mktemp -d -t -q tmp.XXXXXX)"
+	    ;;
+    esac
+
     local ret_val=0;
-    local TEMPDIR="$(mktemp -d -t -q tmp.XXXXXX)"
     local sum_md5="";
     local sum_sha1="";
     local sum_sha256="";
@@ -49,8 +58,16 @@ function test_crapi_digest {
 }
 
 function test_crapi_mdigest {
+    case $(uname) in
+        FreeBSD)
+            local TEMPDIR="$(mktemp -d -q /tmp/tmp.XXXXXX)"
+	    ;;
+        *)
+            local TEMPDIR="$(mktemp -d -t -q tmp.XXXXXX)"
+	    ;;
+    esac
+
     local ret_val=0;
-    local TEMPDIR="$(mktemp -d -t -q tmp.XXXXXX)"
     local sum_md5="";
     local sum_sha1="";
     local sum_sha256="";
