@@ -60,7 +60,7 @@ $OSCAP xccdf generate fix --template urn:redhat:anaconda:pre \
 
 case $(uname) in
 	FreeBSD)
-		stat $result| tr ' ' '\n' | grep '.rw'
+		stat $result| tr ' ' '\n' | grep '^-rw'
 		;;
 	*)
 		stat $result | grep 'Access: (..../-rw.------)'
