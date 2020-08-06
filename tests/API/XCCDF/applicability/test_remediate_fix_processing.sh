@@ -4,9 +4,20 @@ set -e
 set -o pipefail
 
 name=$(basename $0 .sh)
-stderr=$(mktemp -t ${name}.out.XXXXXX)
-tmpdir=$(mktemp -d -t ${name}.out.XXXXXX)
-result=$(mktemp -p $tmpdir ${name}.out.XXXXXX)
+
+case $(uname) in
+	FreeBSD)
+		stderr=$(mktemp /tmp/${name}.out.XXXXXX)
+		tmpdir=$(mktemp -d /tmp/${name}.out.XXXXXX)
+		result=$(mktemp ${tmpdir}/${name}.out.XXXXXX)
+		;;
+	*)
+		stderr=$(mktemp -t ${name}.out.XXXXXX)
+		tmpdir=$(mktemp -d -t ${name}.out.XXXXXX)
+		result=$(mktemp -p $tmpdir ${name}.out.XXXXXX)
+		;;
+esac
+
 echo "Stderr file = $stderr"
 echo "Result file = $stderr"
 rm -f test_file test_file_cpe_na
