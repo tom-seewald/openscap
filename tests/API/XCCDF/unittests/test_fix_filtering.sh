@@ -5,8 +5,18 @@ set -e
 set -o pipefail
 
 name=$(basename $0 .sh)
-result=$(mktemp -t ${name}.out.XXXXXX)
-stderr=$(mktemp -t ${name}.out.XXXXXX)
+
+case $(uname) in
+	FreeBSD)
+		result=$(mktemp /tmp/${name}.out.XXXXXX)
+		stderr=$(mktemp /tmp/${name}.out.XXXXXX)
+		;;
+	*)
+		result=$(mktemp -t ${name}.out.XXXXXX)
+		stderr=$(mktemp -t ${name}.out.XXXXXX)
+		;;
+esac
+
 echo "Stderr file = $stderr"
 echo "Result file = $result"
 
@@ -16,5 +26,14 @@ $OSCAP xccdf generate fix --template urn:redhat:anaconda:pre \
 	--output $result $srcdir/${name}.xccdf.xml 2>&1 > $stderr
 [ -f $stderr ]; [ ! -s $stderr ]; :> $stderr
 grep "$line1" $result
-[ "`grep -v "$line1" $result | sed 's/\W//g'`"x == x ]
+
+case $(uname) in
+	FreeBSD)
+		[ "`grep -v "$line1" $result | gsed 's/\W//g'`"x == x ]
+		;;
+	*)
+		[ "`grep -v "$line1" $result | sed 's/\W//g'`"x == x ]
+		;;
+esac
+
 rm $result

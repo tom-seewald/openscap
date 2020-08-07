@@ -19,7 +19,7 @@ echo "Result file = $result"
 $OSCAP xccdf validate $result
 $OSCAP ds rds-validate $resultArf
 
-$OSCAP info $resultArf > $stdout 2> $stderr
+$OSCAP info $resultArf | sed 's/^[[:space:]]*//' > $stdout 2> $stderr
 grep "^Asset: asset0" $stdout
 grep "^\s*ARF report: xccdf1$" $stdout
 grep "^\s*Report request: collection1$" $stdout

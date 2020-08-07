@@ -21,7 +21,16 @@ function test_api_xccdf_export {
 	./test_api_xccdf --export $INPUT $OUTPUT
 
 	# Workaround libxml2 on rhel5 which exports namespace declarations in different order.
-	sed -i 's|<cpe-list xmlns="http://cpe.mitre.org/XMLSchema/cpe/1.0" xmlns:meta="http://scap.nist.gov/schema/cpe-dictionary-metadata/0.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"|<cpe-list xmlns:meta="http://scap.nist.gov/schema/cpe-dictionary-metadata/0.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://cpe.mitre.org/XMLSchema/cpe/1.0"|' $OUTPUT
+	case $(uname) in
+		FreeBSD)
+			sed -i .bak 's|<cpe-list xmlns="http://cpe.mitre.org/XMLSchema/cpe/1.0" xmlns:meta="http://scap.nist.gov/schema/cpe-dictionary-metadata/0.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"|<cpe-list xmlns:meta="http://scap.nist.gov/schema/cpe-dictionary-metadata/0.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://cpe.mitre.org/XMLSchema/cpe/1.0"|' $OUTPUT
+
+			rm $OUTPUT.bak
+			;;
+		*)
+			sed -i 's|<cpe-list xmlns="http://cpe.mitre.org/XMLSchema/cpe/1.0" xmlns:meta="http://scap.nist.gov/schema/cpe-dictionary-metadata/0.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"|<cpe-list xmlns:meta="http://scap.nist.gov/schema/cpe-dictionary-metadata/0.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://cpe.mitre.org/XMLSchema/cpe/1.0"|' $OUTPUT
+			;;
+	esac
 
 	if [ $? -eq 0 ]; then
 		if ! $XMLDIFF $INPUT $OUTPUT; then

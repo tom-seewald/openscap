@@ -15,17 +15,33 @@ golden_tailored="test_generate_fix_ansible_vars_golden_tailoring.yml"
 var="www_value_val1"
 
 name=$(basename $0 .sh)
-playbook=$(mktemp -t ${name}.XXXXXX.yml)
-out=$(mktemp -t ${name}.out.XXXXXX)
 
+case $(uname) in
+	FreeBSD)
+		playbook=$(mktemp -t ${name}.yml)
+		out=$(mktemp /tmp/${name}.out.XXXXXX)
+		;;
+	*)
+		playbook=$(mktemp -t ${name}.XXXXXX.yml)
+		out=$(mktemp -t ${name}.out.XXXXXX)
+		;;
+esac
 
 $OSCAP xccdf generate fix --profile $profile --template $ansible_template \
 	$srcdir/$ds >$playbook 2>$out
 [ -f $out ]; [ ! -s $out ]; :> $out
 [ -f $playbook ]; [ -s $playbook ]
 # Removes comment and blank lines from the generated playbook.
-sed -i '/#.*/d' $playbook
-sed -i '/^[ \t]*$/d' $playbook
+case $(uname) in
+	FreeBSD)
+		gsed -i '/#.*/d' $playbook
+		gsed -i '/^[ \t]*$/d' $playbook
+		;;
+	*)
+		sed -i '/#.*/d' $playbook
+		sed -i '/^[ \t]*$/d' $playbook
+		;;
+esac
 
 # Compares golden playbook with generated playbook to ensure that Ansible
 # variables were generated correctly. Both playbooks must be the same.
@@ -35,11 +51,18 @@ diff -u $srcdir/$golden $playbook >$out
 # Compares value of Ansible variable $var from the golden altered playbook with
 # the $var from the generated playbook. Values of the Ansible variables $var
 # must differ (altered golden playbook has different value set).
-generated_var=$(grep "$var:" $playbook | sed "s|.*$var:[^0-9]*||")
-golden_altered_var=$(grep "$var:" $srcdir/$golden_altered \
-	| sed "s|.*$var:[^0-9]*||")
-[ "$generated_var" != "$golden_altered_var" ]
+case $(uname) in
+	FreeBSD)
+		generated_var=$(grep "$var:" $playbook | gsed "s|.*$var:[^0-9]*||")
+		golden_altered_var=$(grep "$var:" $srcdir/$golden_altered | gsed "s|.*$var:[^0-9]*||")
+		;;
+	*)
+		generated_var=$(grep "$var:" $playbook | sed "s|.*$var:[^0-9]*||")
+		golden_altered_var=$(grep "$var:" $srcdir/$golden_altered | sed "s|.*$var:[^0-9]*||")
+		;;
+esac
 
+[ "$generated_var" != "$golden_altered_var" ]
 
 # Generates Ansible playbook using tailoring file.
 $OSCAP xccdf generate fix --template $ansible_template \
@@ -48,8 +71,16 @@ $OSCAP xccdf generate fix --template $ansible_template \
 [ -f $out ]; [ ! -s $out ]; :> $out
 [ -f $playbook ]; [ -s $playbook ]
 # Removes comment and blank lines from the generated playbook.
-sed -i '/#.*/d' $playbook
-sed -i '/^[ \t]*$/d' $playbook
+case $(uname) in
+	FreeBSD)
+		gsed -i '/#.*/d' $playbook
+		gsed -i '/^[ \t]*$/d' $playbook
+		;;
+	*)
+		sed -i '/#.*/d' $playbook
+		sed -i '/^[ \t]*$/d' $playbook
+		;;
+esac
 
 # Compares golden tailored playbook with generated playbook to ensure that only
 # tailored Ansible variables are generated in the playbook. Both playbooks must

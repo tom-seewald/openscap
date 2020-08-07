@@ -5,10 +5,21 @@ set -e
 set -o pipefail
 
 name=$(basename $0 _ds.sh)
-sds=$(mktemp -t ${name}.sds.XXXXXX)
 xccdf=${name}.xccdf.xml
-stderr=$(mktemp -t ${name}_ds.err.XXXXXX)
-result=$(mktemp -t ${name}_ds.out.XXXXXX)
+
+case $(uname) in
+	FreeBSD)
+		sds=$(mktemp /tmp/${name}.sds.XXXXXX)
+		stderr=$(mktemp /tmp/${name}_ds.err.XXXXXX)
+		result=$(mktemp /tmp/${name}_ds.out.XXXXXX)
+		;;
+	*)
+		sds=$(mktemp -t ${name}.sds.XXXXXX)
+		stderr=$(mktemp -t ${name}_ds.err.XXXXXX)
+		result=$(mktemp -t ${name}_ds.out.XXXXXX)
+		;;
+esac
+
 echo "sds file: $sds"
 echo "Stderr file = $stderr"
 echo "Results file = $result"
@@ -34,7 +45,16 @@ $OSCAP xccdf generate fix --template urn:redhat:anaconda:pre \
 grep "$line1" $result
 grep "$line2" $result
 grep -v "$line1" $result | grep -v "$line2" | grep -v "$line3"
-[ "`grep -v "$line1" $result | grep -v "$line2" | sed 's/\W//g'`"x == x ]
+
+case $(uname) in
+	FreeBSD)
+		[ "`grep -v "$line1" $result | grep -v "$line2" | gsed 's/\W//g'`"x == x ]
+		;;
+	*)
+		[ "`grep -v "$line1" $result | grep -v "$line2" | sed 's/\W//g'`"x == x ]
+		;;
+esac
+
 :> $result
 
 $OSCAP xccdf generate fix --template urn:redhat:anaconda:pre \
@@ -45,6 +65,14 @@ grep "$line1" $result
 grep "$line2" $result
 grep "$line3" $result
 grep -v "$line1" $result | grep -v "$line2" | grep -v "$line3"
-[ "`grep -v "$line1" $result | grep -v "$line2" | grep -v "$line3" | sed 's/\W//g'`"x == x ]
+
+case $(uname) in
+	FreeBSD)
+		[ "`grep -v "$line1" $result | grep -v "$line2" | grep -v "$line3" | gsed 's/\W//g'`"x == x ]
+		;;
+	*)
+		[ "`grep -v "$line1" $result | grep -v "$line2" | grep -v "$line3" | sed 's/\W//g'`"x == x ]
+		;;
+esac
 
 rm $result $sds

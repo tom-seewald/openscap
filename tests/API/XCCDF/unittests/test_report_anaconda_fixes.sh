@@ -5,8 +5,18 @@ set -e
 set -o pipefail
 
 name=$(basename $0 .sh)
-result=$(mktemp -t ${name}.out.XXXXXX)
-stderr=$(mktemp -t ${name}.out.XXXXXX)
+
+case $(uname) in
+	FreeBSD)
+		result=$(mktemp /tmp/${name}.out.XXXXXX)
+		stderr=$(mktemp /tmp/${name}.out.XXXXXX)
+		;;
+	*)
+		result=$(mktemp -t ${name}.out.XXXXXX)
+		stderr=$(mktemp -t ${name}.out.XXXXXX)
+		;;
+esac
+
 echo "Stderr file = $stderr"
 echo "Result file = $result"
 
@@ -20,7 +30,16 @@ $OSCAP xccdf generate fix --template urn:redhat:anaconda:pre \
 grep "$line1" $result
 grep "$line2" $result
 grep -v "$line1" $result | grep -v "$line2" | grep -v "$line3"
-[ "`grep -v "$line1" $result | grep -v "$line2" | sed 's/\W//g'`"x == x ]
+
+case $(uname) in
+	FreeBSD)
+		[ "`grep -v "$line1" $result | grep -v "$line2" | gsed 's/\W//g'`"x == x ]
+		;;
+	*)
+		[ "`grep -v "$line1" $result | grep -v "$line2" | sed 's/\W//g'`"x == x ]
+		;;
+esac
+
 :> $result
 
 # use --fix-type instead of URN template to generate the same fix
@@ -30,7 +49,16 @@ $OSCAP xccdf generate fix --fix-type anaconda \
 grep "$line1" $result
 grep "$line2" $result
 grep -v "$line1" $result | grep -v "$line2" | grep -v "$line3"
-[ "`grep -v "$line1" $result | grep -v "$line2" | sed 's/\W//g'`"x == x ]
+
+case $(uname) in
+	FreeBSD)
+		[ "`grep -v "$line1" $result | grep -v "$line2" | gsed 's/\W//g'`"x == x ]
+		;;
+	*)
+		[ "`grep -v "$line1" $result | grep -v "$line2" | sed 's/\W//g'`"x == x ]
+		;;
+esac
+
 :> $result
 
 $OSCAP xccdf generate fix --template urn:redhat:anaconda:pre \
@@ -41,7 +69,16 @@ grep "$line1" $result
 grep "$line2" $result
 grep "$line3" $result
 grep -v "$line1" $result | grep -v "$line2" | grep -v "$line3"
-[ "`grep -v "$line1" $result | grep -v "$line2" | grep -v "$line3" | sed 's/\W//g'`"x == x ]
+
+case $(uname) in
+	FreeBSD)
+		[ "`grep -v "$line1" $result | grep -v "$line2" | grep -v "$line3" | gsed 's/\W//g'`"x == x ]
+		;;
+	*)
+		[ "`grep -v "$line1" $result | grep -v "$line2" | grep -v "$line3" | sed 's/\W//g'`"x == x ]
+		;;
+esac
+
 rm $result
 
 
@@ -52,7 +89,16 @@ $OSCAP xccdf generate fix --template urn:redhat:anaconda:pre \
 	--output $result \
 	$srcdir/${name}.xccdf.xml 2>&1 > $stderr
 [ -f $stderr ]; [ ! -s $stderr ]; :> $stderr
-[ "`cat $result | sed 's/\W//g'`"x == x ]
+
+case $(uname) in
+	FreeBSD)
+		[ "`cat $result | gsed 's/\W//g'`"x == x ]
+		;;
+	*)
+		[ "`cat $result | sed 's/\W//g'`"x == x ]
+		;;
+esac
+
 rm $result
 
 line4='^\W*passwd --minlen=8$'
@@ -63,5 +109,14 @@ $OSCAP xccdf generate fix --template urn:redhat:anaconda:pre \
 	$srcdir/${name}.xccdf.xml 2>&1 > $stderr
 [ -f $stderr ]; [ ! -s $stderr ]; :> $stderr
 grep "$line4" $result
-[ "`grep -v $line4 $result | sed 's/\W//g'`"x == x ]
+
+case $(uname) in
+	FreeBSD)
+		[ "`grep -v $line4 $result | gsed 's/\W//g'`"x == x ]
+		;;
+	*)
+		[ "`grep -v $line4 $result | sed 's/\W//g'`"x == x ]
+		;;
+esac
+
 rm $result

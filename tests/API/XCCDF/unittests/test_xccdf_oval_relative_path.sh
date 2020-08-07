@@ -13,9 +13,18 @@ function testInDirectory(){
 
 	pushd "$directory"
 
-	local result=$(mktemp -t ${name}.out.result.XXXXXX)
-	local report=$(mktemp -t ${name}.out.report.XXXXXX)
-	local stderr=$(mktemp -t ${name}.err.XXXXXX)
+	case $(uname) in
+		FreeBSD)
+			local result=$(mktemp /tmp/${name}.out.result.XXXXXX)
+			local report=$(mktemp /tmp/${name}.out.report.XXXXXX)
+			local stderr=$(mktemp /tmp/${name}.err.XXXXXX)
+			;;
+		*)
+			local result=$(mktemp -t ${name}.out.result.XXXXXX)
+			local report=$(mktemp -t ${name}.out.report.XXXXXX)
+			local stderr=$(mktemp -t ${name}.err.XXXXXX)
+			;;
+	esac
 
 	echo "Stderr file = $stderr"
 	echo "Result file = $result"
@@ -41,7 +50,15 @@ function testInDirectory(){
 }
 
 name=$(basename $0 .sh)
-ORIGINAL_XCCDF="$(readlink -e "$srcdir/${name}.xccdf.xml")"
+
+case $(uname) in
+	FreeBSD)
+		ORIGINAL_XCCDF="$(readlink -f "$srcdir/${name}.xccdf.xml")"
+		;;
+	*)
+		ORIGINAL_XCCDF="$(readlink -e "$srcdir/${name}.xccdf.xml")"
+		;;
+esac
 
 ### test in XCCDF's directory
 
@@ -52,7 +69,15 @@ mkdir -p "$testDir/oval/always-fail"
 cp "$ORIGINAL_XCCDF" "$srcdir/test_default_selector.oval.xml" "$testDir"
 cp "$srcdir/oval/always-fail/oval.xml" "$testDir/oval/always-fail"
 
-XCCDF="$(readlink -e "$testDir/${name}.xccdf.xml")"
+case $(uname) in
+	FreeBSD)
+		XCCDF="$(readlink -f "$testDir/${name}.xccdf.xml")"
+		;;
+	*)
+		XCCDF="$(readlink -e "$testDir/${name}.xccdf.xml")"
+		;;
+esac
+
 testInDirectory "$testDir" "$XCCDF"
 rm -rf "$testDir"
 
