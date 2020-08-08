@@ -307,7 +307,7 @@ int sysctl_probe_main(probe_ctx *ctx, void *probe_arg)
         fp = popen(SYSCTL_CMD, "r");
 
         if (!fp) {
-                fprintf(stderr, "Failed to run %s.\n", SYSCTL_CMD);
+                dE("Failed to open output of %s\n", SYSCTL_CMD);
 		return (PROBE_EFATAL);
         }
 
@@ -323,6 +323,11 @@ int sysctl_probe_main(probe_ctx *ctx, void *probe_arg)
 
 		se_mib = SEXP_string_new(mib, strlen(mib));
 
+		if (!se_mib) {
+			dE("Failed to allocate new SEXP_string for se_mib");
+			return (PROBE_ENOENT);
+		}
+
 		/* Remove newline */
 		sysval[strlen(sysval)-1] = '\0';
 
@@ -333,6 +338,11 @@ int sysctl_probe_main(probe_ctx *ctx, void *probe_arg)
 						"name", OVAL_DATATYPE_SEXP, se_mib,
 						"value", OVAL_DATATYPE_STRING, sysval,
 						NULL);
+
+			if (!item) {
+				dE("probe_item_create() returned a null item.");
+				return (PROBE_ENOENT);
+			}
 
 			probe_item_collect(ctx, item);
 		}
