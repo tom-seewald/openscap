@@ -34,6 +34,16 @@
 #include "probe/entcmp.h"
 #include "sysctl_probe.h"
 
+#if defined(OS_FREEBSD)
+#include <stdio.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <string.h>
+
+#include "oval_fts.h"
+#include "common/debug_priv.h"
+#endif
+
 #if defined(OS_LINUX)
 
 #include <stdio.h>
@@ -266,6 +276,71 @@ int sysctl_probe_main(probe_ctx *ctx, void *probe_arg)
 	SEXP_free(bh_entity);
 	SEXP_free(name_entity);
 
+        return (0);
+}
+
+#elif defined(OS_FREEBSD)
+int sysctl_probe_main(probe_ctx *ctx, void *probe_arg)
+{
+        FILE *fp;
+        char output[LINE_MAX];
+        const char* SYSCTL_CMD = "/sbin/sysctl -aew";
+        const char* SEP = "=";
+        char* mib;
+        char* sysval;
+        SEXP_t *se_mib;
+
+        SEXP_t *name_entity, *probe_in;
+        oval_schema_version_t over;
+        int over_cmp;
+
+        probe_in    = probe_ctx_getobject(ctx);
+        name_entity = probe_obj_getent(probe_in, "name", 1);
+        over        = probe_obj_get_platform_schema_version(probe_in);
+        over_cmp    = oval_schema_version_cmp(over, OVAL_SCHEMA_VERSION(5.10));
+
+        if (name_entity == NULL) {
+                dE("Missing \"name\" entity in the input object");
+                return (PROBE_ENOENT);
+        }
+
+        fp = popen(SYSCTL_CMD, "r");
+
+        if (!fp) {
+                fprintf(stderr, "Failed to run %s.\n", SYSCTL_CMD);
+		return (PROBE_EFATAL);
+        }
+
+        while (fgets(output, sizeof(output), fp)) {
+                mib = strtok(output, SEP);
+                sysval = strtok(NULL, SEP);
+
+		if (!mib)
+			continue;
+
+		if (!sysval)
+			continue;
+
+		se_mib = SEXP_string_new(mib, strlen(mib));
+
+		/* Remove newline */
+		sysval[strlen(sysval)-1] = '\0';
+
+		if (probe_entobj_cmp(name_entity, se_mib) == OVAL_RESULT_TRUE) {
+			SEXP_t *item;
+
+			item = probe_item_create(OVAL_UNIX_SYSCTL, NULL,
+						"name", OVAL_DATATYPE_SEXP, se_mib,
+						"value", OVAL_DATATYPE_STRING, sysval,
+						NULL);
+
+			probe_item_collect(ctx, item);
+		}
+
+		SEXP_free(se_mib);
+        }
+
+        pclose(fp);
         return (0);
 }
 #else
