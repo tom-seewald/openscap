@@ -48,12 +48,20 @@ echo "Errors file: $stderr"
 
 $OSCAP oval eval --results $result $srcdir/test_sysctl_probe_all.oval.xml > /dev/null 2>$stderr
 
-# sysctl has duplicities in output
-# hide permission errors like: "sysctl: permission denied on key 'fs.protected_hardlinks'"
-# kernel parameters might use "/" and "." separators interchangeably - normalizing
-sysctl -aN --deprecated 2> /dev/null | grep -v $SYSCTL_BLACKLIST_REGEX | tr "/" "." | sort -u > "$sysctlNames"
 
-grep unix-sys:name "$result" | grep -v $SYSCTL_BLACKLIST_REGEX | sed -E 's;.*>(.*)<.*;\1;g' | sort > "$ourNames"
+case $(uname) in
+	FreeBSD)
+		sysctl -aNw 2> /dev/null > "$sysctlNames"
+		grep unix-sys:name "$result" | grep -v $SYSCTL_BLACKLIST_REGEX | gsed -E 's;.*>(.*)<.*;\1;g' | sort > "$ourNames"
+		;;
+	Linux)
+		# sysctl has duplicities in output
+		# hide permission errors like: "sysctl: permission denied on key 'fs.protected_hardlinks'"
+		# kernel parameters might use "/" and "." separators interchangeably - normalizing
+		sysctl -aN --deprecated 2> /dev/null | grep -v $SYSCTL_BLACKLIST_REGEX | tr "/" "." | sort -u > "$sysctlNames"
+		grep unix-sys:name "$result" | grep -v $SYSCTL_BLACKLIST_REGEX | sed -E 's;.*>(.*)<.*;\1;g' | sort > "$ourNames"
+		;;
+esac
 
 # If procps_ver > 3.3.12 we need to filter *stable_secret and vm.stat_refresh
 # options from the sysctl output, for more details see
