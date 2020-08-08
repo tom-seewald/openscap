@@ -6,7 +6,14 @@
 
 . $builddir/tests/test_common.sh
 
-output_dir=`mktemp -d -t oval_details_XXXXXX`
+case $(uname) in
+	FreeBSD)
+		output_dir=`mktemp -d /tmp/oval_details_XXXXXX`
+		;;
+	*)
+		output_dir=`mktemp -d -t oval_details_XXXXXX`
+		;;
+esac
 
 # Test cases.
 

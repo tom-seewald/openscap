@@ -20,7 +20,15 @@ function test_oscap_info {
 	stderr="$(mktemp)"
 	ds="$(mktemp)"
 	cp $srcdir/scap-ds.xml $ds
-	sed -i "s/X.X/${version}/g" $ds
+
+	case $(uname) in
+		FreeBSD)
+			gsed -i "s/X.X/${version}/g" $ds
+			;;
+		*)
+			sed -i "s/X.X/${version}/g" $ds
+			;;
+	esac
 
 	$OSCAP info $ds > $stdout 2> $stderr
 	[ ! -s $stderr ]
@@ -30,7 +38,14 @@ function test_oscap_info {
 	rm $ds
 }
 
-SDS=$(find $top_srcdir/schemas/sds -maxdepth 1 -mindepth 1 -type d -printf '%f\n')
+case $(uname) in
+	FreeBSD)
+		SDS=$(find $top_srcdir/schemas/sds -maxdepth 1 -mindepth 1 -type d -exec basename {} ';')
+		;;
+	*)
+		SDS=$(find $top_srcdir/schemas/sds -maxdepth 1 -mindepth 1 -type d -printf '%f\n')
+		;;
+esac
 
 for sds_version in $SDS
 do
