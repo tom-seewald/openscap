@@ -521,18 +521,21 @@ static int read_process(SEXP_t *cmd_ent, probe_ctx *ctx)
 	struct result_info r;
 	char buf[LINE_MAX];
 	int i, j, count;
-	int err = 1;
 	kvm_t *kd;
 
 	kd = kvm_openfiles(NULL, _PATH_DEVNULL, NULL, O_RDONLY, buf);
 
-	if (!kd)
-		return err;
+	if (!kd) {
+		dE("Can't obtain kvm handle");
+		return (PROBE_EFATAL);
+	}
 
 	proclist = kvm_getprocs(kd, KERN_PROC_PROC, 0, &count);
 
-	if (!proclist)
-		return err;
+	if (!proclist) {
+		dE("Can't obtain process list");
+		return (PROBE_EFATAL);
+	}
 
 	proc = proclist;
 
@@ -598,7 +601,7 @@ static int read_process(SEXP_t *cmd_ent, probe_ctx *ctx)
 					r.tty = "?";
 					break;
 				default:
-					snprintf(tty_buf, sizeof(tty_buf), "TTY %ld", proc->ki_tdev);
+					snprintf(tty_buf, sizeof(tty_buf), "%ld", proc->ki_tdev);
 					r.tty = tty_buf; 
 					break;
 			}
@@ -631,13 +634,13 @@ static int read_process(SEXP_t *cmd_ent, probe_ctx *ctx)
 		SEXP_free(cmd_sexp);
 	}
 
-	if ( kvm_close(kd) ) {
-		return err;
+	if (kvm_close(kd)) {
+		dE("Error closing kvm handle");
+		return (PROBE_EFAULT);
 	
 	}
 
-	err = 0;
-	return err;
+	return 0;
 }
 
 int process_probe_main(probe_ctx *ctx, void *arg)
