@@ -17,7 +17,14 @@ function test_probes_symlink {
 
     rm -f $RF
 
-    tmpdir=$(mktemp -t -d "test_symlink.XXXXXX")
+    case $(uname) in
+	FreeBSD)
+		tmpdir=$(mktemp -d /tmp/"test_symlink.XXXXXX")
+		;;
+	*)
+		tmpdir=$(mktemp -t -d "test_symlink.XXXXXX")
+		;;
+    esac
 
     touch $tmpdir/some_file
     touch $tmpdir/file_to_remove

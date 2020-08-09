@@ -17,7 +17,15 @@ function test_offline_mode_symlink {
 
     rm -f $RF
 
-    tmpdir=$(mktemp -t -d "test_offline_mode_symlink.XXXXXX")
+    case $(uname) in
+	FreeBSD)
+		tmpdir=$(mktemp -d /tmp/"test_offline_mode_symlink.XXXXXX")
+		;;
+	*)
+		tmpdir=$(mktemp -t -d "test_offline_mode_symlink.XXXXXX")
+		;;
+    esac
+
     touch $tmpdir/some_file
     touch $tmpdir/file_to_remove
     ln -s /some_file $tmpdir/normal_symlink
