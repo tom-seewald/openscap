@@ -53,6 +53,12 @@
 
 #if defined(OS_FREEBSD)
 #include <limits.h>
+#include <sys/user.h>
+#include <kvm.h>
+#include <sys/param.h>
+#include <paths.h>
+#include <libprocstat.h>
+#include <sys/sysctl.h>
 #endif
 
 #include <probe/probe.h>
@@ -62,6 +68,106 @@
 #include "common/debug_priv.h"
 #include "environmentvariable58_probe.h"
 
+#if defined(OS_FREEBSD)
+static int read_environment(SEXP_t *pid_ent, SEXP_t *name_ent, probe_ctx *ctx)
+{
+	struct kinfo_proc *proclist, *proc;
+	int i, j, count, pid;
+	char *name, *value;
+	const char *SEP = "=";
+	struct procstat *stat;
+	char buf[LINE_MAX];
+	SEXP_t *pid_sexp;
+	char **env = NULL;
+	kvm_t *kd;
+
+	kd = kvm_openfiles(NULL, _PATH_DEVNULL, NULL, O_RDONLY, buf);
+
+	if (!kd)
+		return (PROBE_EFAULT);
+
+        proclist = kvm_getprocs(kd, KERN_PROC_PROC, 0, &count);
+
+	if (!proclist)
+		return (PROBE_EFAULT);
+
+	proc = proclist;
+
+	/* Loop until we find a matching PID */
+	for (i = 0; i < count; i++, proc++) {
+		pid = proc->ki_pid;
+		pid_sexp = SEXP_number_newi_32(pid);
+
+		if (!pid_sexp) {
+			dE("Failed to allocate pid_sexp");
+			return PROBE_EFATAL;
+		}
+
+		/* PID doesn't match */
+		if (probe_entobj_cmp(pid_ent, pid_sexp) != OVAL_RESULT_TRUE) {
+			SEXP_free(pid_sexp);
+			continue;
+		}
+
+		/* PID matches */
+		stat = procstat_open_sysctl();
+
+		if (!stat) {
+			printf("NULL procstat handle returned.\n");
+			return (PROBE_EFAULT);
+		}
+
+		env = procstat_getenvv(stat, proc, ARG_MAX);
+
+		/* Found matching process, so stop searching */
+		break;
+	}
+
+	if (!env) {
+		printf("NULL env returned.\n");
+		return (PROBE_EFATAL);
+	}
+
+        for (j = 0; env[j] != NULL; j++) {
+		name = strtok(env[j], SEP);
+
+		if (!name) {
+			dE("Error parsing environment string.");
+			return (PROBE_EFAULT);
+		}
+
+		value = strtok(NULL, SEP);
+
+		if (value != NULL ) {
+			SEXP_t *env_name = SEXP_string_new(name, strlen(name) + 1);
+			SEXP_t *env_value = SEXP_string_new(value, strlen(value) + 1);
+
+			if (probe_entobj_cmp(name_ent, env_name) == OVAL_RESULT_TRUE) {
+
+				SEXP_t *item = probe_item_create(
+					OVAL_INDEPENDENT_ENVIRONMENT_VARIABLE58, NULL,
+					"pid", OVAL_DATATYPE_INTEGER, (int64_t)pid,
+					"name",  OVAL_DATATYPE_SEXP, env_name,
+					"value", OVAL_DATATYPE_SEXP, env_value,
+					NULL);
+
+				if (!item)
+					return (PROBE_EFAULT);
+
+				probe_item_collect(ctx, item);
+			}
+			else {
+				SEXP_free(env_name);
+				SEXP_free(env_value);
+			}
+		}
+        }
+
+	procstat_freeenvv(stat);
+        return 0;
+}
+
+#else
 #define BUFFER_SIZE 256
 
 extern char **environ;
@@ -225,6 +331,7 @@ static int read_environment(SEXP_t *pid_ent, SEXP_t *name_ent, probe_ctx *ctx)
 
 	return err;
 }
+#endif
 
 int environmentvariable58_probe_offline_mode_supported(void)
 {
