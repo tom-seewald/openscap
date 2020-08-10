@@ -502,10 +502,10 @@ int process_probe_main(probe_ctx *ctx, void *arg)
 #elif defined(OS_FREEBSD)
 static char *convert_time(time_t t, char *tbuf, int tb_size)
 {
-	int days = t / SEC_PER_DAY;
-	int hrs = (t - days*SEC_PER_DAY) / SEC_PER_HR;
-	int min = (t - days*SEC_PER_DAY - hrs*SEC_PER_HR) / SEC_PER_MIN;
-	int sec = (t - days*SEC_PER_DAY - hrs*SEC_PER_HR - min*SEC_PER_MIN);
+	unsigned int days = t / SEC_PER_DAY;
+	unsigned int hrs = (t - days*SEC_PER_DAY) / SEC_PER_HR;
+	unsigned int min = (t - days*SEC_PER_DAY - hrs*SEC_PER_HR) / SEC_PER_MIN;
+	unsigned int sec = (t - days*SEC_PER_DAY - hrs*SEC_PER_HR - min*SEC_PER_MIN);
 
 	if (days)
 		snprintf(tbuf, tb_size, "%u-%02u:%02u:%02u", days, hrs, min, sec);
