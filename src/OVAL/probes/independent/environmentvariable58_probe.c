@@ -129,14 +129,15 @@ static int read_environment(SEXP_t *pid_ent, SEXP_t *name_ent, probe_ctx *ctx)
 	}
 
         for (j = 0; env[j] != NULL; j++) {
-		name = strtok(env[j], SEP);
+		char *strp;
+		name = strtok_r(env[j], SEP, &strp);
 
 		if (!name) {
 			dE("Error parsing environment string.");
 			return (PROBE_EFAULT);
 		}
 
-		value = strtok(NULL, SEP);
+		value = strtok_r(NULL, SEP, &strp);
 
 		if (value != NULL ) {
 			SEXP_t *env_name = SEXP_string_new(name, strlen(name) + 1);

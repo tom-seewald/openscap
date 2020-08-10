@@ -312,8 +312,9 @@ int sysctl_probe_main(probe_ctx *ctx, void *probe_arg)
         }
 
         while (fgets(output, sizeof(output), fp)) {
-                mib = strtok(output, SEP);
-                sysval = strtok(NULL, SEP);
+		char *strp;
+		mib = strtok_r(output, SEP, &strp);
+		sysval = strtok_r(NULL, SEP, &strp);
 
 		if (!mib)
 			continue;
