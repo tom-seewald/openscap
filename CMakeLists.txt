@@ -199,6 +199,12 @@ check_include_file(sys/uio.h HAVE_UIO_H)
 check_include_file(sys/xattr.h HAVE_SYS_XATTR_H)
 check_include_file(attr/xattr.h HAVE_ATTR_XATTR_H)
 
+# extattr.h is part of FreeBSD's libc
+if(${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD")
+	add_compile_definitions(HAVE_SYS_EXTATTR_H)
+	set(HAVE_SYS_EXTATTR_H 1)
+endif()
+
 # HAVE_ATOMIC_BUILTINS
 check_c_source_compiles("#include <stdint.h>\nint main() {uint16_t foovar=0; uint16_t old=1; uint16_t new=2;__sync_bool_compare_and_swap(&foovar,old,new); return __sync_fetch_and_add(&foovar, 1); __sync_fetch_and_add(&foovar, 1);}" HAVE_ATOMIC_BUILTINS)
 if(NOT HAVE_ATOMIC_BUILTINS)
@@ -258,7 +264,7 @@ cmake_dependent_option(OPENSCAP_PROBE_INDEPENDENT_YAMLFILECONTENT "Independent y
 # UNIX PROBES
 cmake_dependent_option(OPENSCAP_PROBE_UNIX_DNSCACHE "Unix dnscache probe" ON "ENABLE_PROBES_UNIX" OFF)
 cmake_dependent_option(OPENSCAP_PROBE_UNIX_FILE "Unix file probe" ON "ENABLE_PROBES_UNIX" OFF)
-cmake_dependent_option(OPENSCAP_PROBE_UNIX_FILEEXTENDEDATTRIBUTE "Unix fileextendedattribute probe" ON "ENABLE_PROBES_UNIX; HAVE_SYS_XATTR_H OR HAVE_ATTR_XATTR_H" OFF)
+cmake_dependent_option(OPENSCAP_PROBE_UNIX_FILEEXTENDEDATTRIBUTE "Unix fileextendedattribute probe" ON "ENABLE_PROBES_UNIX; HAVE_ATTR_XATTR_H OR HAVE_SYS_EXTATTR_H OR HAVE_SYS_EXTATTR_H" OFF)
 cmake_dependent_option(OPENSCAP_PROBE_UNIX_GCONF "Unix gconf probe" ON "ENABLE_PROBES_UNIX; GCONF_FOUND" OFF)
 cmake_dependent_option(OPENSCAP_PROBE_UNIX_INTERFACE "Unix interface probe" ON "ENABLE_PROBES_UNIX" OFF)
 cmake_dependent_option(OPENSCAP_PROBE_UNIX_PASSWORD "Unix password probe" ON "ENABLE_PROBES_UNIX" OFF)
