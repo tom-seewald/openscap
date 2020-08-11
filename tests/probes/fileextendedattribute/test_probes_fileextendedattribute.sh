@@ -8,7 +8,7 @@
 # Test Cases.
 
 function test_probes_fileextendedattribute {
-    return 255 # TODO: implement xattr support check
+    #return 255 # TODO: implement xattr support check
 
     probecheck "fileextendedattribute" || return 255
 
@@ -17,12 +17,20 @@ function test_probes_fileextendedattribute {
     local RESFILE="results.xml"
 
     [ -f $RESFILE ] && rm -f $RESFILE
-    
-    touch /tmp/xattr_with_val
-    setfattr -n user.fooattr -v foo /tmp/xattr_with_val
 
+    touch /tmp/xattr_with_val
     touch /tmp/xattr_without_val
-    setfattr -n user.fooattr /tmp/xattr_without_val
+
+    case $(uname) in
+	FreeBSD)
+		setextattr user fooattr foo /tmp/xattr_with_val
+		setextattr user fooattr "" /tmp/xattr_without_val
+		;;
+	*)
+		setfattr -n user.fooattr -v foo /tmp/xattr_with_val
+		setfattr -n user.fooattr /tmp/xattr_without_val
+		;;
+    esac
 
     touch /tmp/xattr_noattr
 
