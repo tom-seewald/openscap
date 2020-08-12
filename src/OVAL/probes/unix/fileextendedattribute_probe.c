@@ -275,6 +275,15 @@ static int file_cb(const char *prefix, const char *p, const char *f, void *ptr, 
 
 	while (index < byte_count) {
 		name_len = xattr_list[index] + 1;
+
+		/* We should be able to trust the output of extattr_list_file(), however
+		 * let's be safe and ensure it doesn't try to read past the end of the array.
+		 */
+		if ((name_len < 1) || (name_len > byte_count - index - 1)) {
+			dD("FAIL: out of bounds name_len value: %d, at index: %d, in array of size: %d", name_len, index, byte_count);
+			return PROBE_EFAULT;
+		}
+
 		name_buf = malloc(name_len);
 		value_buf = malloc(LINE_MAX);
 
