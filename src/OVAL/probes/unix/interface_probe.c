@@ -64,6 +64,8 @@
 
 #if defined(OS_FREEBSD)
 #include <netinet/in.h>
+
+#define NUM_IF_FLAGS 24
 #endif
 
 #if defined(OS_LINUX) || defined(OS_FREEBSD)
@@ -220,9 +222,7 @@ static void get_flags(const struct ifaddrs *ifa, char ***fp) {
 #elif defined(OS_FREEBSD)
 static void get_flags(const struct ifaddrs *ifa, char ***fp) {
         int i = 0;
-	const int num_flags = 24;
-        static char *flags_buf[num_flags + 1];
-
+        static char *flags_buf[NUM_IF_FLAGS + 1];
         *fp = flags_buf;
 
         if (ifa != NULL) {
