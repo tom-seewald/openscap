@@ -289,15 +289,10 @@ int sysctl_probe_main(probe_ctx *ctx, void *probe_arg)
         char* mib;
         char* sysval;
         SEXP_t *se_mib;
-
         SEXP_t *name_entity, *probe_in;
-        oval_schema_version_t over;
-        int over_cmp;
 
         probe_in    = probe_ctx_getobject(ctx);
         name_entity = probe_obj_getent(probe_in, "name", 1);
-        over        = probe_obj_get_platform_schema_version(probe_in);
-        over_cmp    = oval_schema_version_cmp(over, OVAL_SCHEMA_VERSION(5.10));
 
         if (name_entity == NULL) {
                 dE("Missing \"name\" entity in the input object");
