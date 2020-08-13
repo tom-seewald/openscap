@@ -545,8 +545,8 @@ static int read_process(SEXP_t *cmd_ent, probe_ctx *ctx)
 			continue;
 
 		SEXP_t *cmd_sexp;
-		char arg_dest[LINE_MAX] = {0};
 		char **argbuf = NULL;
+		char arg_dest[LINE_MAX] = {0};
 		argbuf = kvm_getargv(kd, proc, LINE_MAX);
 
 
@@ -554,8 +554,8 @@ static int read_process(SEXP_t *cmd_ent, probe_ctx *ctx)
 			r.command = "";
 		else {
 			for (j = 0; argbuf[j] != NULL; j++) {
-				strncat(arg_dest, argbuf[j], strlen(argbuf[j]));
-				strncat(arg_dest, " ", 1);
+				strncat(arg_dest, argbuf[j], LINE_MAX - strlen(arg_dest) - 1);
+				strncat(arg_dest, " ", LINE_MAX - strlen(arg_dest) - 1);
 			}
 
 			arg_dest[strlen(arg_dest)-1] = '\0';
