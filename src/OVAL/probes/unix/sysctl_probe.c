@@ -284,7 +284,7 @@ int sysctl_probe_main(probe_ctx *ctx, void *probe_arg)
 {
         FILE *fp;
         char output[LINE_MAX];
-        const char* SYSCTL_CMD = "/sbin/sysctl -aew";
+        const char* SYSCTL_CMD = "/sbin/sysctl -ae";
         const char* SEP = "=";
         char* mib;
         char* sysval;
